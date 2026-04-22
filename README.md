@@ -1,6 +1,6 @@
 # smart-reference
 
-A Claude Code skill for intelligent external reference retrieval.
+An agent skill for intelligent external reference retrieval. Works with Claude Code and Codex.
 
 When you say things like "check what the experts do", "look for best practices", "is there anything on GitHub", or "search online" — this skill automatically kicks in, searches the right sources in parallel, and gives you actionable recommendations with cited sources and reasoning.
 
@@ -166,7 +166,7 @@ Every search produces a structured report:
 ```markdown
 # Reference Report: {topic}
 
-검색 Time: {ISO timestamp}
+Search Time: {ISO timestamp}
 Expires: {expiry time}
 Channels: {channels used}
 
