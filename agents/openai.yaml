@@ -3,7 +3,7 @@ description: >
   Gather external references and synthesize them into actionable guidance.
   Searches GitHub, official docs, expert blogs, and communities in parallel.
   Returns structured reports with source attribution and recommendations.
-version: "2.0.0"
+version: "2.0.1"
 
 policy:
   allow_implicit_invocation: true

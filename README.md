@@ -84,7 +84,7 @@ We researched how production agent frameworks handle this (LangGraph, OpenAI Age
 For smart-reference, we use a **3-condition AND gate**:
 1. All launched agents have returned (or timed out)
 2. At least 1 S/A-grade source found
-3. Report output + cache written
+3. Report output delivered to user
 
 Plus hard limits: max 4 parallel agents, max 5 sources per channel, global 3-minute cap.
 
