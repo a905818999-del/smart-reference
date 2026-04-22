@@ -6,4 +6,4 @@ description: >
 version: "2.0.0"
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

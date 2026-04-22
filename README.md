@@ -88,20 +88,18 @@ For smart-reference, we use a **3-condition AND gate**:
 
 Plus hard limits: max 4 parallel agents, max 5 sources per channel, global 3-minute cap.
 
-### Local cache
+### Time-sensitivity
 
-Repeated queries on the same topic shouldn't re-trigger full searches. The cache:
-- Stores reports as markdown files with SHA1-hashed filenames
-- Tracks TTL per topic type
-- Appends new results to existing reports (versioned, never overwrites)
-- Checks cache first, skips to output if fresh, re-searches if expired
+v2.0 is instruction-only — no local cache. Instead, each report includes a **freshness label**:
 
-```
-~/.claude/reference-cache/
-  index.json          ← metadata index
-  reports/
-    {sha1}.md         ← topic reports (v1 → v2 appended)
-```
+| Topic type | Treat report as fresh for |
+|------------|---------------------------|
+| Fast-moving (AI tools, APIs) | 1 day |
+| Mature frameworks | 30 days |
+| Engineering practices | 60 days |
+| Standards / RFCs | 180 days |
+
+Re-run the skill after the window passes. Caching may return in a future version as an optional script layer.
 
 ---
 
@@ -117,20 +115,25 @@ Repeated queries on the same topic shouldn't re-trigger full searches. The cache
 
 **Degrade gracefully** — if a channel times out, skip it and note the gap. If only B/C sources found, flag it prominently. Never fail silently.
 
-**Cache with TTL** — fast-moving topics expire in 1 day. Stable ones in months. Reports version-append, not overwrite.
+**Cache with TTL** — reports include freshness labels. Fast-moving topics (AI tools) expire in 1 day; stable standards in months.
 
 ---
 
 ## Installation
 
-This is a [Claude Code](https://claude.ai/code) / [oh-my-claudecode](https://github.com/hesreallyhim/oh-my-claudecode) skill.
+Works with **Claude Code** (via [oh-my-claudecode](https://github.com/hesreallyhim/oh-my-claudecode)) and **Codex**.
 
+**Claude Code / oh-my-claudecode:**
 ```bash
-# Clone into your Claude skills directory
 git clone https://github.com/a905818999-del/smart-reference ~/.claude/skills/smart-reference
 ```
+Restart Claude Code. The skill auto-triggers on natural language — no slash command needed.
 
-Then restart Claude Code. The skill auto-triggers on natural language — no slash command needed.
+**Codex:**
+```bash
+git clone https://github.com/a905818999-del/smart-reference ~/.codex/skills/smart-reference
+```
+Restart Codex. Implicit invocation is enabled (`allow_implicit_invocation: true` in `agents/openai.yaml`), so natural-language triggers work automatically.
 
 **Trigger phrases** (examples):
 - "去网上查一下..."
