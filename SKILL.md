@@ -87,13 +87,22 @@ description: Use when the user asks to look something up online, compare approac
 
 | 领域 | 官方站点 |
 |------|---------|
-| Claude / Anthropic | docs.anthropic.com, github.com/anthropics |
-| OpenAI | platform.openai.com/docs |
+| Claude / Anthropic | docs.anthropic.com, anthropic.com, github.com/anthropics |
+| Codex / OpenAI developer docs | developers.openai.com/codex, developers.openai.com/codex/skills, developers.openai.com |
+| OpenAI platform/API | platform.openai.com/docs, developers.openai.com |
 | Python 标准库 | docs.python.org |
 | Pandas | pandas.pydata.org/docs |
 | Web (MDN) | developer.mozilla.org |
 | Node.js | nodejs.org/docs |
 | 框架文档 | 根据上下文动态识别 |
+
+**官方源选择规则**:
+- 用户明确提到 `Claude`、`Anthropic`、`Claude Code`、Anthropic SDK/功能名时，优先 `Claude / Anthropic`
+- 用户明确提到 `Codex`、`OpenAI`、`OpenAI API`、`skills in Codex`、`developers.openai.com` 时，优先 `Codex / OpenAI developer docs` 或 `OpenAI platform/API`
+- 当前运行环境或任务上下文明显是 Codex 产品使用问题时，优先 `Codex / OpenAI developer docs`
+- 当前问题明显是通用 OpenAI API 或平台能力时，优先 `OpenAI platform/API`
+- 仅当“官方文档是主证据”且 `Claude` 与 `Codex/OpenAI` 两种解释都成立时，先问用户要查 `Claude` 生态还是 `Codex/OpenAI` 生态，再进入对应官方源
+- 如果用户回答“都看”，则同时检索两侧官方源，并在输出中分开标注 `Claude 官方` 与 `Codex/OpenAI 官方`
 
 **搜索策略**:
 - 优先在官方域名下搜索关键词
@@ -314,18 +323,31 @@ description: Use when the user asks to look something up online, compare approac
 ## 示例：好与坏
 
 <Good>
-**场景**: 用户说"去网上查一下 MCP server 设计的 best practice"
+**场景 A**: 用户说"去网上查一下 MCP server 设计的 best practice"，但没说明是 Claude 还是 Codex/OpenAI
 
 执行:
 1. 意图路由 → "best practice" → 通道 3 + 4 + 2
-2. 并行启动 3 个通道，读取 `references/masters.md` 获取 AI 领域博客列表
-3. 通道 3 找到 Simon Willison 关于 MCP 的文章（A 级）
-4. 通道 4 找到 HN 高票讨论（B 级）
-5. 通道 2 找到 Anthropic 官方 MCP 文档（S 级）
-6. 融合输出：先引官方文档结论，再引大神观点，附踩坑
-7. 每条结论标注来源 + 为什么
+2. 发现官方文档是主证据，但 `Claude` 与 `Codex/OpenAI` 两种解释都成立
+3. 先问用户要查 `Claude` 生态还是 `Codex/OpenAI` 生态
+4. 用户回答后，再进入对应官方源
+5. 并行读取大神观点、社区讨论、对应平台官方文档
+6. 融合输出时，每条结论标注来源 + 为什么
 
-**为什么好**: 按来源可信度排序，结论可溯源，没有凭空发明内容。
+**场景 B**: 用户说"Codex skills 官方文档怎么写"
+
+执行:
+1. 识别到 `Codex` 语境明确
+2. 通道 2 直接优先 `Codex / OpenAI developer docs`
+3. 不去反问平台，也不默认落到 Anthropic 官方文档
+
+**场景 C**: 用户说"Claude Code 里这个能力官方文档怎么说"
+
+执行:
+1. 识别到 `Claude Code` 语境明确
+2. 通道 2 直接优先 `Claude / Anthropic`
+3. 不去反问平台，也不混入 Codex/OpenAI 官方源作为主证据
+
+**为什么好**: 先按产品语境选官方源；语义不明时先问再查；结论按来源可信度排序，可溯源，没有凭空发明内容。
 </Good>
 
 <Bad>

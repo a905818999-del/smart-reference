@@ -1,121 +1,106 @@
 # smart-reference
 
-An agent skill for intelligent external reference retrieval. Works with Claude Code and Codex.
+A dual-platform skill for intelligent external reference retrieval across Claude Code and Codex.
 
-When you say things like "check what the experts do", "look for best practices", "is there anything on GitHub", or "search online" — this skill automatically kicks in, searches the right sources in parallel, and gives you actionable recommendations with cited sources and reasoning.
+When you say things like "check what the experts do", "look for best practices", "is there anything on GitHub", or "search online", this skill routes the query to the right sources and turns the results into actionable guidance with source attribution.
 
 ---
 
 ## Why this exists
 
-When building with AI agents, I kept repeating the same mental workflow:
+Before implementing something, the useful questions are usually:
 
-> "Before I implement this, let me check — what does the official docs say? Has anyone built something like this on GitHub? What do people like Karpathy or Simon Willison think about this approach? Any community threads with gotchas?"
+> What do the official docs say? Has anyone built this already on GitHub? What do experts like Karpathy or Simon Willison recommend? Are there community threads with gotchas?
 
-This was ad-hoc every time. Sometimes I'd search GitHub, sometimes I'd just ask Claude from memory. The quality of reference varied wildly depending on how much effort I put in.
-
-The question became: **can this whole workflow be standardized into a skill that does it consistently and well?**
+This skill standardizes that workflow so reference gathering is consistent instead of ad hoc.
 
 ---
 
-## How the design came together
+## How it works
 
-### The core idea
+The skill organizes external research into 6 channels:
 
-Instead of asking Claude to "search the web" (which is vague), define **6 specific channels** that cover the information landscape:
+1. **GitHub high-star repos**: what the community has actually built
+2. **Official docs**: what the framework or API author recommends
+3. **Expert blogs/videos**: what trusted practitioners think
+4. **Communities**: what people are saying in practice
+5. **Code examples**: cookbooks, examples, and runnable patterns
+6. **Standards/RFCs**: protocol, spec, and compliance references
 
-1. **GitHub high-star repos** — what has the community actually built?
-2. **Official docs** — what does the framework/API author say?
-3. **Expert blogs** — what do people like Karpathy, Lilian Weng, Simon Willison think?
-4. **Communities** — what are practitioners saying? (Stack Overflow, Reddit, Hacker News, Chinese forums)
-5. **Code examples** — Cookbooks, official examples, Awesome lists
-6. **Standards/RFC** — for protocol, security, or spec questions
+It routes the query by intent, gathers the relevant evidence, and fuses the result into a structured answer.
 
-Route the query to the right channels based on intent, run them in parallel, fuse the results.
-
-### Star thresholds (why these numbers)
-
-Not all GitHub repos are equal. We settled on:
+### Star thresholds
 
 | Category | Threshold | Reasoning |
 |----------|-----------|-----------|
-| Mainstream tools | ≥ 5,000 ⭐ | Mature ecosystem, below this is likely noise |
-| Vertical/niche tools | ≥ 1,000 ⭐ | Niche ceilings are lower, but 1k still filters junk |
-| New tech (< 6 months) | ≥ 1,000 ⭐ + recent commits | Stars accumulate slowly; activity matters more |
-| Awesome lists | ≥ 1,000 ⭐ | Curated content, higher bar is reasonable |
+| Mainstream tools | >= 5,000 stars | Mature ecosystem, below this is often noise |
+| Vertical or niche tools | >= 1,000 stars | Lower ceiling, still useful for filtering |
+| New tech (< 6 months) | >= 1,000 stars + recent commits | Activity matters as much as stars |
+| Awesome lists | >= 1,000 stars | Curated content should clear a higher bar |
 
-Also track **momentum**: repos gaining > 5% of total stars in the past 30 days are worth watching even if absolute count is lower.
+Also consider momentum: repositories gaining more than 5% of total stars in the last 30 days may be worth including even if they are near the threshold.
 
-### TTL strategy (cache expiry)
+### Time sensitivity
 
-AI tools move fast. We halved the initial TTL estimates mid-design:
-
-| Content type | TTL | Reasoning |
-|-------------|-----|-----------|
-| Fast-moving (LLMs, new AI frameworks) | **1 day** | These update daily. Yesterday's report is stale. |
-| Mature frameworks (React, Pandas) | **30 days** | Stable but monthly versioning |
-| Engineering practices / patterns | **60 days** | Slow-moving, safe to cache longer |
-| Standards / RFC | **180 days** | Almost never changes |
-
-### The "why" requirement
-
-Early versions of the skill output recommendations without explaining the reasoning. This was the same problem as asking Claude from memory — you get an answer but can't evaluate it.
-
-The fix: every conclusion in the report must follow this structure:
-
-```
-Recommendation: [specific actionable suggestion]
-Source: [channel] — [project/article/person] (credibility level, date)
-Why: [why this approach over alternatives]
-```
-
-This makes the output auditable. If the reasoning doesn't hold, you can reject it.
-
-### Explicit termination condition
-
-LLM agent loops have a natural failure mode: they don't know when to stop. Without a clear "done" signal, the model either stops too early or keeps searching indefinitely.
-
-We researched how production agent frameworks handle this (LangGraph, OpenAI Agents SDK, AutoGen, 12-factor-agents) and found four patterns:
-- Structured completion field (`status: "complete"`)
-- No-tool-call = natural completion
-- Specific termination token (`Final Answer:`)
-- Hard `max_turns` cap
-
-For smart-reference, we use a **3-condition AND gate**:
-1. All launched agents have returned (or timed out)
-2. At least 1 S/A-grade source found
-3. Report output delivered to user
-
-Plus hard limits: max 4 parallel agents, max 5 sources per channel, global 3-minute cap.
-
-### Time-sensitivity
-
-v2.0 is instruction-only — no local cache. Instead, each report includes a **freshness label**:
+This is a v2 instruction-only skill with no local cache. Instead, each report should communicate freshness:
 
 | Topic type | Treat report as fresh for |
 |------------|---------------------------|
-| Fast-moving (AI tools, APIs) | 1 day |
+| Fast-moving AI tools and APIs | 1 day |
 | Mature frameworks | 30 days |
-| Engineering practices | 60 days |
-| Standards / RFCs | 180 days |
+| Engineering practices and patterns | 60 days |
+| Standards and RFCs | 180 days |
 
-Re-run the skill after the window passes. Caching may return in a future version as an optional script layer.
+### Why every conclusion needs a reason
+
+Every recommendation should include:
+
+```text
+Recommendation: [specific actionable suggestion]
+Source: [channel] - [project/article/person] (credibility level, date)
+Why: [why this approach over alternatives]
+```
+
+That keeps the output auditable instead of turning it into unsupported memory-based advice.
+
+### Completion rule
+
+The skill should consider the search complete only when:
+
+1. All launched channels have returned or timed out
+2. At least one S- or A-grade source was found, or the report clearly warns that only weaker evidence exists
+3. The final report has been delivered to the user
+
+Hard limits:
+
+- max 4 channels in parallel
+- max 5 sources per channel
+- global 3-minute cap
+
+### Official-doc routing across Claude and Codex
+
+This skill supports both **Claude** and **Codex** without assuming one is the default official source.
+
+- If the user clearly asks about **Claude**, **Anthropic**, or **Claude Code**, route official-doc lookups to Anthropic sources first.
+- If the user clearly asks about **Codex**, **OpenAI**, **OpenAI API**, or **skills in Codex**, route official-doc lookups to OpenAI sources first.
+- Codex-side official sources explicitly include:
+  - `developers.openai.com/codex`
+  - `developers.openai.com/codex/skills`
+  - `developers.openai.com`
+  - `platform.openai.com/docs`
+- If the question is ambiguous and official docs are the main evidence, ask whether the user wants the **Claude** ecosystem or the **Codex/OpenAI** ecosystem before searching.
+- If the user says "both", search both and label the results separately as `Claude 官方` and `Codex/OpenAI 官方`.
 
 ---
 
-## Design principles we landed on
+## Design principles
 
-**Route before searching** — different questions need different channels. "How do I implement X" → GitHub + docs. "What's the consensus on X" → community + experts.
-
-**Parallel, not sequential** — all relevant channels run simultaneously, results fuse after.
-
-**Credibility tiers** — S (official/RFC) > A (experts/high-star) > B (high-vote community) > C (general discussion). Never present C-grade content as definitive.
-
-**Source transparency** — every conclusion traces back to a channel and specific source. No "based on research" with nothing behind it.
-
-**Degrade gracefully** — if a channel times out, skip it and note the gap. If only B/C sources found, flag it prominently. Never fail silently.
-
-**Cache with TTL** — reports include freshness labels. Fast-moving topics (AI tools) expire in 1 day; stable standards in months.
+- **Route before searching**: different questions need different channels
+- **Parallel when useful**: gather independent evidence without serial bottlenecks
+- **Credibility tiers**: official and standards first, weaker community evidence later
+- **Source transparency**: no "based on research" claims without traceable sources
+- **Graceful degradation**: timeouts and weak evidence should be surfaced, not hidden
+- **Freshness labels, not local cache**: let readers judge how current the evidence is
 
 ---
 
@@ -123,22 +108,27 @@ Re-run the skill after the window passes. Caching may return in a future version
 
 Works with **Claude Code** (via [oh-my-claudecode](https://github.com/hesreallyhim/oh-my-claudecode)) and **Codex**.
 
-**Claude Code / oh-my-claudecode:**
+**Claude Code / oh-my-claudecode**
+
 ```bash
 git clone https://github.com/a905818999-del/smart-reference ~/.claude/skills/smart-reference
 ```
-Restart Claude Code. The skill auto-triggers on natural language — no slash command needed.
 
-**Codex:**
+Restart Claude Code after installing.
+
+**Codex**
+
 ```bash
 git clone https://github.com/a905818999-del/smart-reference ~/.codex/skills/smart-reference
 ```
-Restart Codex. Implicit invocation is enabled (`allow_implicit_invocation: true` in `agents/openai.yaml`), so natural-language triggers work automatically.
 
-**Trigger phrases** (examples):
+Restart Codex after installing. Implicit invocation is enabled in `agents/openai.yaml`.
+
+**Trigger phrases**:
+
 - "去网上查一下..."
 - "上网查一下..."
-- "看看大神怎么做的"
+- "看看大神怎么做"
 - "有什么好方案"
 - "参考一下 best practice"
 - "GitHub 上有没有现成的"
@@ -149,19 +139,19 @@ Restart Codex. Implicit invocation is enabled (`allow_implicit_invocation: true`
 
 ## File structure
 
-```
+```text
 smart-reference/
-  SKILL.md                  ← skill prompt (the actual instructions)
+  SKILL.md
   references/
-    masters.md              ← curated expert sources by domain
-  README.md                 ← this file
+    masters.md
+  agents/
+    openai.yaml
+  README.md
 ```
 
 ---
 
 ## Report format
-
-Every search produces a structured report:
 
 ```markdown
 # Reference Report: {topic}
@@ -175,26 +165,26 @@ Channels: {channels used}
 ## Core Findings
 
 > **Recommendation**: {specific actionable suggestion}
-> **Source**: {channel} — {project/article/person} (Grade, date)
-> **Why**: {reasoning — why this over alternatives}
+> **Source**: {channel} - {project/article/person} (Grade, date)
+> **Why**: {reasoning - why this over alternatives}
 
 ## References
 
 ### GitHub Projects
-- {name} (⭐{stars}) — {summary}
+- {name} (⭐{stars}) - {summary}
 
 ### Official Docs
-- {doc name} — {key content}
+- {doc name} - {key content}
 
 ### Expert Views
-- {name}: {insight} — [{title}]({url}) ({date})
+- {name}: {insight} - [{title}]({url}) ({date})
 
 ### Community
 - {platform}: {finding} ({votes})
 
 ## Gotchas / Pitfalls
 
-[From issues, failure cases, community threads]
+[From issues, failure cases, or community threads]
 ```
 
 ---
@@ -203,8 +193,12 @@ Channels: {channels used}
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v1.0.0 | 2026-04-19 | Initial release — 6 channels, cache, TTL strategy |
-| v1.1.0 | 2026-04-21 | Added explicit termination conditions, source+why format, timeout handling, AUTO-EXECUTE signal |
+| v2.0.3 | 2026-04-23 | Refined dual-platform official-doc routing, documented Claude vs Codex/OpenAI ambiguity handling, and aligned repo metadata with current behavior |
+| v2.0.2 | 2026-04-23 | Final consistency pass for Codex-compatible instruction-only behavior |
+| v2.0.1 | 2026-04-22 | Aligned Codex policy and README with actual invocation behavior |
+| v2.0.0 | 2026-04-22 | Codex-compatible rewrite with instruction-only workflow and dual installation guidance |
+| v1.1.0 | 2026-04-21 | Added explicit termination conditions, source-plus-why output, timeout handling, and auto-execute signal |
+| v1.0.0 | 2026-04-19 | Initial release with 6 channels, cache, and TTL strategy |
 
 ---
 
