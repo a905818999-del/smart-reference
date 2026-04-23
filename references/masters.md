@@ -1,58 +1,81 @@
-# 通道 3 — 知名开发者信息源列表
+# Expert Source Allowlist
 
-按领域分类，供 smart-reference 通道 3 检索时使用。
-搜索策略：`WebSearch: "{大神名}" "{关键词}" site:{域名}` 或 `"{大神名}" "{关键词}" 近12个月`
+Use this file for Channel 3 expert-source discovery.
 
-## AI / LLM / Agent
+Rules:
 
-- Andrej Karpathy — karpathy.github.io, youtube.com/@andrejkarpathy
-- Lilian Weng — lilianweng.github.io（综述类极高质量）
-- Simon Willison — simonwillison.net（AI 工具链实战）
-- Jay Alammar — jalammar.github.io（可视化解释）
-- Sebastian Raschka — sebastianraschka.com（LLM 实践）
-- Chip Huyen — huyenchip.com（ML 系统设计）
-- Jeremy Howard — fast.ai（fastai，实用教学）
-- Eugene Yan — eugeneyan.com（应用 ML、推荐系统）
-- Hamel Husain — hamel.dev（LLM Fine-tuning、Evals）
-- swyx — swyx.io（AI Engineer 视角）
-- Philipp Schmid — philschmid.de（Hugging Face，fine-tuning 实战）
-- Nathan Lambert — substack（RLHF，alignment）
+- Search inside the relevant category first
+- Prefer original posts or original videos, not reposts
+- Prefer the last 12 months unless the topic is stable and older material is still authoritative
+- If a source is not listed here, treat it as outside the default allowlist and only use it when the known sources do not cover the topic well
 
-## Anthropic 相关
+Suggested search pattern:
 
-- Anthropic Engineering Blog — anthropic.com/news
-- Anthropic Cookbook — github.com/anthropics/anthropic-cookbook
+```text
+"{person or site}" "{keyword}" site:{domain}
+```
 
-## 前端 / Web
+## OpenAI / Codex Native
 
-- Dan Abramov — overreacted.io（React 深度）
-- Kent C. Dodds — kentcdodds.com（Testing、React）
-- Josh Comeau — joshwcomeau.com（CSS、动效）
-- Lea Verou — lea.verou.me（CSS 规范级）
-- Addy Osmani — addyosmani.com（性能优化）
-- Ryan Florence — remix.run/blog
-- Jake Archibald — jakearchibald.com（Web 标准）
-- web.dev — web.dev（Google 出品，性能/PWA）
+- OpenAI Codex product page: `openai.com/codex`
+- OpenAI Codex docs: `platform.openai.com/docs/codex/overview`
+- OpenAI guide "How OpenAI uses Codex": `openai.com/business/guides-and-resources/how-openai-uses-codex/`
+- OpenAI Academy Codex hub: `openai.com/academy/codex/`
+- OpenAI Academy Codex events and workshops: `academy.openai.com`
 
-## 系统 / DevOps / 底层
+## Independent Codex / Agent Practitioners
 
-- Julia Evans — jvns.ca（底层工具，清晰易读）
-- Martin Kleppmann — martin.kleppmann.com（分布式系统，DDIA 作者）
-- Brendan Gregg — brendangregg.com（性能调优）
-- Dan Luu — danluu.com（系统思考）
-- Kelsey Hightower — GitHub + 社交媒体（Kubernetes）
-- High Scalability — highscalability.com（系统架构案例）
+- Simon Willison: `simonwillison.net` (high-priority independent source for Codex workflows, subagents, and practical usage)
+- Hamel Husain: `hamel.dev`
+- swyx: `swyx.io`
+- Nathan Lambert: `interconnects.ai` or current long-form writing channel
 
-## 数据 / Python
+## General AI / LLM / Agent
 
-- Wes McKinney — wesmckinney.com（Pandas 作者）
-- Jake VanderPlas — jakevdp.github.io（数据科学）
-- Towards Data Science — towardsdatascience.com（高赞文章）
+- Andrej Karpathy: `karpathy.github.io`, `youtube.com/@andrejkarpathy`
+- Lilian Weng: `lilianweng.github.io`
+- Jay Alammar: `jalammar.github.io`
+- Sebastian Raschka: `sebastianraschka.com`
+- Chip Huyen: `huyenchip.com`
+- Jeremy Howard: `fast.ai`
+- Eugene Yan: `eugeneyan.com`
+- Philipp Schmid: `philschmid.de`
 
-## 通用工程 / 哲学
+## Anthropic Related
 
-- Joel Spolsky — joelonsoftware.com
-- Paul Graham — paulgraham.com
-- John Carmack — 访谈 + GitHub（高性能、游戏引擎）
-- Coding Horror — codinghorror.com（Jeff Atwood）
-- Martin Fowler — martinfowler.com（重构、架构模式）
+- Anthropic Engineering Blog: `anthropic.com/news`
+- Anthropic Cookbook: `github.com/anthropics/anthropic-cookbook`
+
+## Frontend / Web
+
+- Dan Abramov: `overreacted.io`
+- Kent C. Dodds: `kentcdodds.com`
+- Josh Comeau: `joshwcomeau.com`
+- Lea Verou: `lea.verou.me`
+- Addy Osmani: `addyosmani.com`
+- Ryan Florence / Remix blog: `remix.run/blog`
+- Jake Archibald: `jakearchibald.com`
+- web.dev: `web.dev`
+
+## Systems / DevOps
+
+- Julia Evans: `jvns.ca`
+- Martin Kleppmann: `martin.kleppmann.com`
+- Brendan Gregg: `brendangregg.com`
+- Dan Luu: `danluu.com`
+- Kelsey Hightower: official posts, talks, or GitHub
+- High Scalability: `highscalability.com`
+
+## Data / Python
+
+- Wes McKinney: `wesmckinney.com`
+- Jake VanderPlas: `jakevdp.github.io`
+- Towards Data Science: `towardsdatascience.com`
+
+## General Engineering
+
+- Joel Spolsky: `joelonsoftware.com`
+- Paul Graham: `paulgraham.com`
+- John Carmack: primary talks, interviews, or GitHub when relevant
+- Coding Horror / Jeff Atwood: `codinghorror.com`
+- Martin Fowler: `martinfowler.com`
