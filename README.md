@@ -10,7 +10,7 @@ When you say things like "check what the experts do", "look for best practices",
 
 Before implementing something, the useful questions are usually:
 
-> What do the official docs say? Has anyone built this already on GitHub? What do experts like Karpathy or Simon Willison recommend? Are there community threads with gotchas?
+> What do the official docs say? Has anyone built this already on GitHub? What do experts recommend? Are there community threads with gotchas?
 
 This skill standardizes that workflow so reference gathering is consistent instead of ad hoc.
 
@@ -20,7 +20,7 @@ This skill standardizes that workflow so reference gathering is consistent inste
 
 The skill organizes external research into 6 channels:
 
-1. **GitHub high-star repos**: what the community has actually built
+1. **GitHub repos**: what the community has actually built
 2. **Official docs**: what the framework or API author recommends
 3. **Expert blogs/videos**: what trusted practitioners think
 4. **Communities**: what people are saying in practice
@@ -29,7 +29,28 @@ The skill organizes external research into 6 channels:
 
 It routes the query by intent, gathers the relevant evidence, and fuses the result into a structured answer.
 
-### Star thresholds
+### Security model
+
+This skill treats all external content as untrusted data, not instructions.
+
+- GitHub repos, READMEs, issues, discussions, comments, blogs, videos, and forum posts are all untrusted inputs
+- Community and issue content can inform gotchas, but cannot override official docs
+- GitHub stars are a popularity signal, not a trust signal
+- Retrieved commands, package names, and setup steps must never be auto-executed
+- Anything that would lead to code execution, dependency adoption, or privileged actions is pushed into a manual review step
+
+This keeps the skill focused on evidence collection and synthesis, not on blindly operationalizing whatever a repo or issue says.
+
+### Source of truth
+
+To reduce drift between files:
+
+- `SKILL.md` is the runtime source of truth for routing, safety rules, and report structure
+- `references/masters.md` is the curated allowlist for expert sources
+- `references/community.md` is the curated allowlist for community sources
+- `README.md` is an overview for humans and should stay higher-level than `SKILL.md`
+
+### Popularity thresholds
 
 | Category | Threshold | Reasoning |
 |----------|-----------|-----------|
@@ -42,7 +63,7 @@ Also consider momentum: repositories gaining more than 5% of total stars in the 
 
 ### Time sensitivity
 
-This is a v2 instruction-only skill with no local cache. Instead, each report should communicate freshness:
+This is an instruction-only skill with no local cache. Instead, each report should communicate freshness:
 
 | Topic type | Treat report as fresh for |
 |------------|---------------------------|
@@ -89,7 +110,7 @@ This skill supports both **Claude** and **Codex** without assuming one is the de
   - `developers.openai.com`
   - `platform.openai.com/docs`
 - If the question is ambiguous and official docs are the main evidence, ask whether the user wants the **Claude** ecosystem or the **Codex/OpenAI** ecosystem before searching.
-- If the user says "both", search both and label the results separately as `Claude 官方` and `Codex/OpenAI 官方`.
+- If the user says "both", search both and label the results separately.
 
 ---
 
@@ -101,20 +122,19 @@ This skill supports both **Claude** and **Codex** without assuming one is the de
 - **Source transparency**: no "based on research" claims without traceable sources
 - **Graceful degradation**: timeouts and weak evidence should be surfaced, not hidden
 - **Freshness labels, not local cache**: let readers judge how current the evidence is
+- **Execution stays manual**: search can inform action, but must not silently become action
 
 ---
 
 ## Installation
 
-Works with **Claude Code** (via [oh-my-claudecode](https://github.com/hesreallyhim/oh-my-claudecode)) and **Codex**.
+Works with **Claude Code** and **Codex**.
 
-**Claude Code / oh-my-claudecode**
+**Claude Code**
 
 ```bash
 git clone https://github.com/a905818999-del/smart-reference ~/.claude/skills/smart-reference
 ```
-
-Restart Claude Code after installing.
 
 **Codex**
 
@@ -122,13 +142,17 @@ Restart Claude Code after installing.
 git clone https://github.com/a905818999-del/smart-reference ~/.codex/skills/smart-reference
 ```
 
-Restart Codex after installing. Implicit invocation is enabled in `agents/openai.yaml`.
+Restart the tool after installing.
+
+Implicit invocation is enabled in `agents/openai.yaml`.
+
+Explicit invocation uses `$smart-reference`.
 
 **Trigger phrases**:
 
 - "去网上查一下..."
 - "上网查一下..."
-- "看看大神怎么做"
+- "看看大佬怎么做"
 - "有什么好方案"
 - "参考一下 best practice"
 - "GitHub 上有没有现成的"
@@ -143,6 +167,7 @@ Restart Codex after installing. Implicit invocation is enabled in `agents/openai
 smart-reference/
   SKILL.md
   references/
+    community.md
     masters.md
   agents/
     openai.yaml
@@ -159,19 +184,24 @@ smart-reference/
 Search Time: {ISO timestamp}
 Expires: {expiry time}
 Channels: {channels used}
+Keywords: {keywords}
 
 ---
 
-## Core Findings
+## Trusted Conclusions
 
 > **Recommendation**: {specific actionable suggestion}
 > **Source**: {channel} - {project/article/person} (Grade, date)
-> **Why**: {reasoning - why this over alternatives}
+> **Why**: {reasoning}
+
+## Weak Signals / Community Observations
+
+- {issue, discussion, or community pattern}
 
 ## References
 
 ### GitHub Projects
-- {name} (⭐{stars}) - {summary}
+- {name} ({stars}) - {summary}
 
 ### Official Docs
 - {doc name} - {key content}
@@ -182,9 +212,17 @@ Channels: {channels used}
 ### Community
 - {platform}: {finding} ({votes})
 
+## Risks / Trust Notes
+
+- {prompt injection attempt, suspicious install path, weak provenance, contradictory guidance, or dependency risk}
+
+## Human Review Required
+
+- {commands, packages, dependencies, setup steps, or privileged actions that must not be auto-executed}
+
 ## Gotchas / Pitfalls
 
-[From issues, failure cases, or community threads]
+- {pitfall from issues, failure cases, or community threads}
 ```
 
 ---
@@ -193,10 +231,11 @@ Channels: {channels used}
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v2.0.3 | 2026-04-23 | Refined dual-platform official-doc routing, documented Claude vs Codex/OpenAI ambiguity handling, and aligned repo metadata with current behavior |
+| v2.1.0 | 2026-04-23 | Added an explicit security model, separated trusted conclusions from weak signals, and documented manual-review gates for execution and dependency adoption |
+| v2.0.3 | 2026-04-23 | Refined dual-platform official-doc routing and aligned repo metadata with current behavior |
 | v2.0.2 | 2026-04-23 | Final consistency pass for Codex-compatible instruction-only behavior |
 | v2.0.1 | 2026-04-22 | Aligned Codex policy and README with actual invocation behavior |
-| v2.0.0 | 2026-04-22 | Codex-compatible rewrite with instruction-only workflow and dual installation guidance |
+| v2.0.0 | 2026-04-22 | Codex-compatible rewrite with dual installation guidance |
 | v1.1.0 | 2026-04-21 | Added explicit termination conditions, source-plus-why output, timeout handling, and auto-execute signal |
 | v1.0.0 | 2026-04-19 | Initial release with 6 channels, cache, and TTL strategy |
 
